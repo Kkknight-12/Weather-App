@@ -1,32 +1,13 @@
-// const geoCode = require('./utils/geocode') ;
-// const foreCast = require('./utils/forecast');
-
-// const address = process.argv[2];
-
-// if(!address){
-//     console.log('Please provide an address')
-// }else{
-//     geoCode( address, (error, {latitude, longitude, location} = {} ) => {
-//         if(error){
-//             return console.log(error);
-//         }
-    
-//         foreCast( latitude, longitude, (error, foreaCastData) => {
-//             if(error){
-//                 return console.log(error);
-//             }
-//             console.log( location );
-//             console.log(foreaCastData);
-//         })
-//     })
-// };
-
 const path = require('path');
 const express = require('express');
 const { dirname } = require('path');
 const hbs = require('hbs');
+const geoCode = require('./utils/geocode');
+const foreCast = require('./utils/forecast');
 
 const app = express();
+const port = process.env.PORT || 3000;
+
 
 // Define paths for Express config
 const publicDir = path.join(__dirname, '../public')
@@ -43,7 +24,7 @@ app.use(express.static(publicDir));
 
 app.get( '', (req, resp) => {
     resp.render('index', {
-        title:'weather app',
+        title:'Weather App',
         name: 'Knight'
     })
 })
@@ -65,30 +46,47 @@ app.get('/help', (req, resp) => {
 });
 
 
-// app.get('/weather', (req, resp) => {
-//     if(!req.query.address){
-//         return resp.send({
-//             error: 'you must provide an address'
-//         })
-//     }
+app.get('/weather', (req, resp) => {
+    if(!req.query.address){
+        return resp.send({
+            error: 'you must provide an address'
+        })
+    }
+
+    geoCode( req.query.address, (error, {latitude, longitude, location} = {}) =>{
+        if(error){
+            return resp.send({error})
+        }
+        foreCast( latitude, longitude, (error, forcastData) => {
+            if( error ){
+                return resp.send(error);
+            }
+            resp.send({
+                forcast: forcastData,
+                location,
+                address: req.query.address
+            });
+        });
+    });
+
 //    resp.send({
 //             forcast: 'Its raining',
 //             location: 'Dharamshala',
 //             address: req.query.address
 //         })
-// })
+})
 
-// app.get( '/products', (req, resp) => {
-//     if(!req.query.search){
-//         return resp.send({
-//             error: 'asdasdasdasdasdada'
-//         })
-//     }
-//     console.log( req.query.search)
-//     resp.send({
-//         product:[]
-//     })
-// })
+app.get( '/products', (req, resp) => {
+    if(!req.query.search){
+        return resp.send({
+            error: 'asdasdasdasdasdada'
+        })
+    }
+    console.log( req.query.search)
+    resp.send({
+        product:[]
+    })
+})
 
 // setting up 404
 //  * means everthing that doest not listed above
@@ -109,6 +107,6 @@ app.get( '*', (req, resp)=>{
 } )
 
 
-app.listen( 3000, () =>{
-    console.log('Server Started')
+app.listen( port, () =>{
+    console.log('Server Started on port '+ port)
 });
